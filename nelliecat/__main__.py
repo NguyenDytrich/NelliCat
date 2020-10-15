@@ -8,9 +8,13 @@ import redis
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
-REDIS = redis.Redis(host="localhost", port=6379, db=0, charset="utf-8", decode_responses=True)
+REDIS = redis.Redis(
+    host="localhost", port=6379, db=0, charset="utf-8", decode_responses=True
+)
+INTENTS = discord.Intents.default()
+INTENTS.members = True
 
-BOT = commands.Bot(command_prefix="$")
+BOT = commands.Bot(command_prefix="$", intents=INTENTS)
 
 
 def has_role(name, roles):
@@ -19,6 +23,34 @@ def has_role(name, roles):
         return True
     else:
         return False
+
+
+def get_channel(name, channels):
+    channel = None
+    for c in channels:
+        if name == c.name:
+            channel = c
+            break
+    return channel
+
+
+class Greeting(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        welcome = get_channel("welcome", member.guild.text_channels)
+        if welcome:
+            string = f"""
+            Hey {member.display_name}, welcome to the {member.guild.name}! If you
+            have any questions, please ask a consultant in #questions. Depending
+            on who's on the clock, and if it's business hours, we'll get back to
+            you right away!
+
+            If you'd like to schedule a synchronous meeting (Zoom), or
+            asynchronous feedback (video feedback), check out the #resources channel."""
+            await welcome.send(string)
 
 
 @BOT.command(name="signin")
@@ -50,4 +82,10 @@ async def signoff(ctx):
         await ctx.send(f"Bye {ctx.author.display_name}!")
 
 
+@BOT.event
+async def on_ready():
+    print("Nelliecat bot live and ready")
+
+
+BOT.add_cog(Greeting(BOT))
 BOT.run(TOKEN)
