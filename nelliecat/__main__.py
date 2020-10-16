@@ -42,6 +42,7 @@ class Greeting(commands.Cog):
     async def on_member_join(self, member):
         welcome = get_channel("welcome", member.guild.text_channels)
         if welcome:
+            # TODO: format this string
             string = f"""
             Hey {member.display_name}, welcome to the {member.guild.name}! If you
             have any questions, please ask a consultant in #questions. Depending
