@@ -5,6 +5,7 @@ Source for Cornish Writing Center's discord bot.
 
 Roadmap
 -------
-- [ ] !signin
-- [ ] !signout
-- [ ] !active
+- [x] !signin
+- [x] !signout
+- [x] !active
+- [ ] More features tbd
