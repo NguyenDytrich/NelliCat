@@ -5,6 +5,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 
 import redis
+from dictionary import MwDefinition
 
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
@@ -56,6 +57,16 @@ class Greeting(commands.Cog):
             await welcome.send(string)
 
 
+class Dictionary(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.command()
+    async def define(self, ctx, arg):
+        definition = MwDefinition(arg)
+        await ctx.send(embed=definition.get_embed())
+
+
 @BOT.command(name="signin")
 async def signin(ctx):
     member = ctx.author
@@ -91,4 +102,5 @@ async def on_ready():
 
 
 BOT.add_cog(Greeting(BOT))
+BOT.add_cog(Dictionary(BOT))
 BOT.run(TOKEN)
