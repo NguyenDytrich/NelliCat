@@ -41,16 +41,18 @@ class Greeting(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member):
         welcome = get_channel("welcome", member.guild.text_channels)
+        resources = get_channel("resources", member.guild.text_channels)
         if welcome:
             # TODO: format this string
-            string = f"""
-            Hey {member.display_name}, welcome to the {member.guild.name}! If you
-            have any questions, please ask a consultant in #questions. Depending
-            on who's on the clock, and if it's business hours, we'll get back to
-            you right away!
+            string = (
+                f"Hey {member.mention}, welcome to the {member.guild.name}! If you"
+                "have any questions, please ask a consultant in #questions. Depending"
+                "on who's on the clock, and if it's business hours, we'll get back to"
+                "you right away!\n\n"
+                "If you'd like to schedule a synchronous meeting (Zoom), or"
+                f"asynchronous feedback (video feedback), check out the {resources.mention} channel."
+            )
 
-            If you'd like to schedule a synchronous meeting (Zoom), or
-            asynchronous feedback (video feedback), check out the #resources channel."""
             await welcome.send(string)
 
 
