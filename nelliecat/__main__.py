@@ -41,20 +41,31 @@ class Greeting(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        # TODO this is probably a bad way of getting the channels
         welcome = get_channel("welcome", member.guild.text_channels)
         resources = get_channel("resources", member.guild.text_channels)
+        bot_channel = get_channel("bot-channel", member.guild.text_channels)
+        questions = get_channel("questions", member.guild.text_channels)
+        general = get_channel("general", member.guild.text_channels)
+
         if welcome:
-            # TODO: format this string
+            embed = discord.Embed()
+
+            embed.set_image(url=os.getenv("WELCOME_IMAGE_URL"))
+
             string = (
-                f"Hey {member.mention}, welcome to the {member.guild.name}! If you"
-                "have any questions, please ask a consultant in #questions. Depending"
-                "on who's on the clock, and if it's business hours, we'll get back to"
-                "you right away!\n\n"
-                "If you'd like to schedule a synchronous meeting (Zoom), or"
-                f"asynchronous feedback (video feedback), check out the {resources.mention} channel."
+                f"Hey {member.mention}, welcome to the **{member.guild.name}**!\n\n"
+                "If you'd like to schedule a synchronous meeting (Zoom), or "
+                f"asynchronous feedback (video feedback), check out the {resources.mention} channel.\n\n"
+                f"Use the $active command in {bot_channel.mention} to see who's currently in! "
+                f"If you have any questions, please ask a consultant in {questions.mention}. Depending "
+                "on if it's business hours, and if anyone is in, we'll get back to you as soon as possible.\n\n"
+                f"Otherwise feel free to hang out in {general.mention} as long as you'd like!"
             )
 
-            await welcome.send(string)
+            embed.add_field(name="Welcome", value=string)
+
+            await welcome.send(embed=embed)
 
 
 class Dictionary(commands.Cog):
