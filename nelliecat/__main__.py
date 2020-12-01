@@ -35,6 +35,27 @@ def get_channel(name, channels):
     return channel
 
 
+async def send_rules(channel):
+    embed = discord.Embed(title="Rules")
+    embed.add_field(inline=False, name="\u200B", value="1. Be polite")
+    embed.add_field(inline=False, name="\u200B", value="2. Don't eat ALL the cookies")
+    embed.add_field(
+        inline=False,
+        name="\u200B",
+        value=(
+            "3. Please make yourself aware of fire exits A and B to the"
+            "front and left of the room"
+        ),
+    )
+    embed.add_field(
+        inline=False,
+        name="\u200B",
+        value="After reading, please gives this message a :thumbsup: reaction!",
+    )
+    msg = await channel.send(embed=embed)
+    REDIS.set("rules_msg_id", msg.id)
+
+
 class Greeting(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -47,6 +68,7 @@ class Greeting(commands.Cog):
         bot_channel = get_channel("bot-channel", member.guild.text_channels)
         questions = get_channel("questions", member.guild.text_channels)
         general = get_channel("general", member.guild.text_channels)
+        rules = get_channel("rules", member.guild.text_channels)
 
         if welcome:
             embed = discord.Embed()
@@ -55,6 +77,7 @@ class Greeting(commands.Cog):
 
             string = (
                 f"Hey {member.mention}, welcome to the **{member.guild.name}**!\n\n"
+                f"First of all, please read the rules in {rules.mention}!\n\n"
                 "If you'd like to schedule a synchronous meeting (Zoom), or "
                 f"asynchronous feedback (video feedback), check out the {resources.mention} channel.\n\n"
                 f"Use the $active command in {bot_channel.mention} to see who's currently in! "
@@ -66,6 +89,25 @@ class Greeting(commands.Cog):
             embed.add_field(name="Welcome", value=string)
 
             await welcome.send(embed=embed)
+
+        if not REDIS.get("rules_msg_id"):
+            embed = discord.Embed(title="Rules")
+            embed.add_field(inline=False, name="\u200B", value="1. Be polite")
+            embed.add_field(
+                inline=False, name="\u200B", value="2. Don't eat ALL the cookies"
+            )
+            embed.add_field(
+                inline=False,
+                name="\u200B",
+                value="3. Please make yourself aware of fire exits A and B to the front and left of the room",
+            )
+            embed.add_field(
+                inline=False,
+                name="\u200B",
+                value="After reading, please gives this message a :thumbsup: reaction!",
+            )
+
+            send_rules(rules)
 
 
 class Dictionary(commands.Cog):
@@ -107,10 +149,38 @@ async def signoff(ctx):
         await ctx.send(f"Bye {ctx.author.display_name}!")
 
 
+@BOT.command(name="rules")
+async def rules(ctx):
+    rules = get_channel("rules", ctx.author.guild.text_channels)
+    rules_msg_id = REDIS.get("rules_msg_id")
+    try:
+        if rules_msg_id:
+            last_msg = await rules.fetch_message(rules_msg_id)
+            if rules.last_message_id:
+                await ctx.send(f"Rules are posted on {rules.mention}")
+        else:
+            await send_rules(rules)
+    except discord.NotFound:
+        await send_rules(rules)
+
+
 @BOT.event
 async def on_ready():
     print("Nelliecat bot live and ready")
 
+
+@BOT.listen("on_raw_reaction_add")
+async def check_rules_reaction(reaction):
+    writer_role = [r for r in reaction.member.guild.roles if r.name == "Writer"]
+    rules_msg_id = REDIS.get("rules_msg_id")
+    is_thumbsup = reaction.emoji.name == "👍"
+    is_rules_react = reaction.message_id == int(rules_msg_id)
+
+    print(reaction.emoji)
+
+    if is_rules_react and is_thumbsup:
+        print(writer_role[0])
+        await reaction.member.add_roles(writer_role[0])
 
 BOT.add_cog(Greeting(BOT))
 BOT.add_cog(Dictionary(BOT))
